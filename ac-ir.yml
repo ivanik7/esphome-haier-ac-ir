@@ -1,0 +1,68 @@
+esphome:
+  name: room-ir
+  friendly_name: room-ir
+  includes:
+    - haier_ir.h
+
+esp8266:
+  board: esp_wroom_02
+
+logger:
+  tx_buffer_size: 2048
+
+api:
+  encryption:
+    key: "KEY"
+
+ota:
+  password: !secret api-pass
+
+wifi:
+  ssid: !secret ssid
+  password: !secret pass
+  use_address: 192.168.3.53
+  ap:
+    ssid: "ac-ir Fallback Hotspot"
+    password: !secret api-pass
+
+captive_portal:
+    
+web_server:
+  port: 80
+
+status_led:
+  pin:
+    number: GPIO04
+
+remote_receiver:
+  pin:
+    number: GPIO05
+    inverted: true
+  id: recv
+
+remote_transmitter:
+  id: trans
+  pin: GPIO14
+  carrier_duty_percent: 50%
+
+sensor:
+  - platform: homeassistant
+    name: "room_temp"
+    id: room_temp
+    entity_id: sensor.room_temp
+
+climate:
+- platform: custom
+  lambda: |-
+    auto my_custom_climate = new HaierClimate();
+    
+    App.register_component(my_custom_climate);
+    
+    my_custom_climate->set_transmitter(id(trans));
+    my_custom_climate->set_sensor(room_temp);
+
+    recv->register_listener(my_custom_climate);
+
+    return {my_custom_climate};
+  climates:
+    - name: "Haier"
